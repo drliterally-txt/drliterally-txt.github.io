@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>eNgg — тренажёр слов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  --bg:#0f1016; --panel:#191b25; --panel2:#20222f; --line:#2b2e3d;
+  --ink:#edecf4; --muted:#8a8ca0; --accent:#c6f24e; --accent-ink:#121406;
+  --ok:#53d08a; --bad:#ff6b6b; --warn:#ffcf5c;
+  --easy:#5ec8f2; --medium:#c6f24e; --hard:#ff8a5c;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+:root[data-theme="dark"]{
+  --bg:#0f1016; --panel:#191b25; --panel2:#20222f; --line:#2b2e3d;
+  --ink:#edecf4; --muted:#8a8ca0; --accent:#c6f24e; --accent-ink:#121406;
+  --ok:#53d08a; --bad:#ff6b6b; --warn:#ffcf5c;
+  --easy:#5ec8f2; --medium:#c6f24e; --hard:#ff8a5c;
+}
+:root[data-theme="digital"]{
+  --bg:#04070a; --panel:#0a1218; --panel2:#0f1a22; --line:#15323c;
+  --ink:#cdfdff; --muted:#5c8a93; --accent:#00e5ff; --accent-ink:#002b33;
+  --ok:#35ffb0; --bad:#ff3b6b; --warn:#ffd23b;
+  --easy:#00e5ff; --medium:#35ffb0; --hard:#ff9f1c;
+}
+:root[data-theme="matrix"]{
+  --bg:#000600; --panel:#04120a; --panel2:#061c0f; --line:#0d3b1e;
+  --ink:#c9ffd6; --muted:#4f9163; --accent:#39ff5e; --accent-ink:#00240d;
+  --ok:#39ff5e; --bad:#ff4d4d; --warn:#e5ff3b;
+  --easy:#7cfc55; --medium:#39ff5e; --hard:#baff2e;
+}
+:root[data-theme="neon"]{
+  --bg:#120a1f; --panel:#1c1030; --panel2:#251641; --line:#3a2560;
+  --ink:#f3e9ff; --muted:#9b84c0; --accent:#ff3df0; --accent-ink:#2a0030;
+  --ok:#39f0c0; --bad:#ff5c7a; --warn:#ffc23d;
+  --easy:#41c7ff; --medium:#ff3df0; --hard:#ff8a3d;
+}
+:root[data-theme="ocean"]{
+  --bg:#071320; --panel:#0e2135; --panel2:#142b44; --line:#244258;
+  --ink:#e3f2ff; --muted:#7fa0bd; --accent:#2dd4ff; --accent-ink:#00263a;
+  --ok:#4be3a0; --bad:#ff6b7d; --warn:#ffcf5c;
+  --easy:#2dd4ff; --medium:#5ad1c0; --hard:#ffa14d;
+}
+:root[data-theme="light"]{
+  --bg:#f3f3f7; --panel:#ffffff; --panel2:#ececf4; --line:#e0e0ea;
+  --ink:#1b1c26; --muted:#6b6d82; --accent:#4b7bec; --accent-ink:#ffffff;
+  --ok:#19a56b; --bad:#e23b4e; --warn:#c98a00;
+  --easy:#2f8fd6; --medium:#4b7bec; --hard:#e07a2f;
+}
+:root[data-theme="paper"]{
+  --bg:#f4efe2; --panel:#fffbf3; --panel2:#efe7d6; --line:#e3d8c2;
+  --ink:#2c2519; --muted:#8a7f6a; --accent:#b45309; --accent-ink:#fffaf0;
+  --ok:#3f7d4f; --bad:#c0392b; --warn:#b7791f;
+  --easy:#2f80a6; --medium:#b45309; --hard:#a33a1f;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:var(--safe-t)}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Inter",system-ui,-apple-system,sans-serif;
+  padding:calc(var(--safe-t) + 18px) 16px calc(var(--safe-b) + 40px);
+  -webkit-font-smoothing:antialiased; line-height:1.5;
+  min-height:100vh;
+}
+.wrap{max-width:600px;margin:0 auto}
+.display{font-family:"Space Grotesk",sans-serif}
+h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(30px,8vw,46px);
+   letter-spacing:-.02em;margin:0 0 2px;line-height:1}
+h1 .dot{color:var(--accent)}
+.tag{color:var(--muted);font-size:14px;margin:0 0 26px}
+.tag b{color:var(--ink);font-weight:600}
+
+/* generic card */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px}
+
+/* ---- start screen ---- */
+.sectlabel{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:13px;
+  color:var(--muted);margin:22px 2px 10px;letter-spacing:.01em}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:16px 16px 14px;cursor:pointer;text-align:left;color:inherit;
+  transition:border-color .15s,transform .08s,background .15s;position:relative;overflow:hidden}
+.tile:hover{border-color:var(--sel,#555)}
+.tile[aria-pressed="true"]{border-color:var(--sel);background:var(--panel2)}
+.tile[aria-pressed="true"]::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--sel)}
+.tile .n{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:19px;margin-bottom:3px}
+.tile .c{font-size:13px;color:var(--muted)}
+.tile.allt{grid-column:1 / -1;--sel:var(--ink)}
+
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.chip{flex:1 1 auto;min-width:0;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:11px 10px;cursor:pointer;color:var(--muted);
+  font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:14px;text-align:center;
+  transition:all .14s;white-space:nowrap}
+.chip[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent);font-weight:600}
+.chip .sub{display:block;font-size:11px;opacity:.7;font-weight:400;margin-top:1px}
+.themes{flex-wrap:wrap}
+.themes .chip{flex:1 1 28%}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;
+  vertical-align:middle;background:var(--swc);box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.chip[aria-pressed="true"] .sub{opacity:.75}
+
+.start-btn{width:100%;margin-top:26px;padding:17px;border:none;border-radius:16px;
+  background:var(--accent);color:var(--accent-ink);cursor:pointer;
+  font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:18px;letter-spacing:-.01em;
+  transition:transform .08s,filter .15s}
+.start-btn:hover{filter:brightness(1.05)}
+.start-btn:active{transform:translateY(1px)}
+
+.ref-toggle{width:100%;margin-top:12px;padding:14px;border:1px solid var(--line);
+  border-radius:14px;background:transparent;color:var(--muted);cursor:pointer;
+  font-family:"Space Grotesk",sans-serif;font-size:14px;font-weight:500}
+.ref-toggle:hover{color:var(--ink);border-color:var(--muted)}
+
+/* ---- quiz screen ---- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
+.prog{display:flex;flex-direction:column;gap:7px}
+.prog .count{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px}
+.prog .count b{color:var(--accent)}
+.bar{width:150px;max-width:42vw;height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.timer{position:relative;width:62px;height:62px;flex:none}
+.timer svg{transform:rotate(-90deg)}
+.timer .tnum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:20px}
+.timer.infinite .tnum{font-size:22px;color:var(--muted)}
+
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:20px;
+  padding:30px 22px;text-align:center;margin-bottom:16px}
+.qdir{font-size:12px;color:var(--muted);margin-bottom:14px;letter-spacing:.02em}
+.qword{font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:clamp(26px,7vw,38px);line-height:1.15;letter-spacing:-.01em;word-break:break-word}
+
+.opts{display:grid;gap:10px}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:15px 16px;cursor:pointer;color:var(--ink);font-size:16px;font-family:"Inter",sans-serif;
+  transition:border-color .13s,background .13s}
+.opt:hover:not(:disabled){border-color:var(--muted)}
+.opt:disabled{cursor:default}
+.opt .key{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:13px;color:var(--muted);
+  width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:6px}
+.opt.correct{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 16%,transparent)}
+.opt.correct .key{border-color:var(--ok);color:var(--ok)}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.opt.wrong .key{border-color:var(--bad);color:var(--bad)}
+.opt.correct .mark,.opt.wrong .mark{margin-left:auto;font-weight:700;font-family:"Space Grotesk",sans-serif}
+.opt.correct .mark{color:var(--ok)} .opt.wrong .mark{color:var(--bad)}
+
+.skip{margin-top:14px;width:100%;background:transparent;border:none;color:var(--muted);
+  cursor:pointer;font-size:13px;font-family:"Space Grotesk",sans-serif;padding:8px}
+.skip:hover{color:var(--ink)}
+.qhint{color:var(--muted);font-size:14px;margin-top:14px;font-style:italic}
+.qword.sentence{font-size:clamp(18px,4.4vw,24px);font-weight:600;line-height:1.55}
+.blank{color:var(--accent);font-weight:700;border-bottom:2px solid var(--accent);padding:0 .2em;white-space:nowrap}
+.typebox{display:flex;flex-direction:column;gap:12px}
+#typeInput{width:100%;padding:16px;border-radius:14px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);font-size:18px;font-family:"Space Grotesk",sans-serif;text-align:center}
+#typeInput::placeholder{color:var(--muted);font-family:"Inter",sans-serif;font-size:14px}
+#typeInput:focus{outline:none;border-color:var(--accent)}
+#typeInput:disabled{opacity:.8}
+#typeInput.ok{border-color:var(--ok)} #typeInput.bad{border-color:var(--bad)}
+#checkBtn{padding:15px;border:none;border-radius:14px;background:var(--accent);color:var(--accent-ink);
+  cursor:pointer;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:16px}
+#checkBtn:disabled{opacity:.5;cursor:default}
+.typefeed{min-height:22px;text-align:center;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px}
+.typefeed.ok{color:var(--ok)} .typefeed.bad{color:var(--bad)}
+.typefeed b{color:var(--ink)}
+
+/* ---- result ---- */
+.res-hero{text-align:center;padding:30px 20px 24px}
+.res-score{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:64px;line-height:1;
+  letter-spacing:-.03em}
+.res-score .tot{color:var(--muted);font-size:34px}
+.res-msg{font-family:"Space Grotesk",sans-serif;font-size:18px;margin-top:8px}
+.res-stats{display:flex;gap:10px;margin:18px 0}
+.stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.stat .v{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:22px}
+.stat .l{font-size:12px;color:var(--muted);margin-top:3px}
+.stat .best{color:var(--accent)}
+.review{margin-top:6px}
+.rev-item{display:flex;justify-content:space-between;gap:14px;align-items:baseline;
+  padding:12px 2px;border-bottom:1px solid var(--line)}
+.rev-item:last-child{border-bottom:none}
+.rev-en{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px}
+.rev-ru{color:var(--muted);font-size:14px;text-align:right}
+.rev-bad .rev-ru b{color:var(--bad);font-weight:500}
+.res-actions{display:flex;gap:10px;margin-top:22px}
+.res-actions button{flex:1;padding:15px;border-radius:14px;cursor:pointer;
+  font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink)}
+.res-actions .again{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* ---- reference ---- */
+.ref-block{border-bottom:1px solid var(--line);padding:16px 2px}
+.ref-block:last-child{border:none}
+.ref-block pre{margin:0;white-space:pre-wrap;font-family:"Inter",sans-serif;font-size:14px;line-height:1.7}
+.ref-block pre .en{color:var(--accent)}
+.back{background:transparent;border:none;color:var(--muted);cursor:pointer;
+  font-family:"Space Grotesk",sans-serif;font-size:14px;padding:4px 0;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.back:hover{color:var(--ink)}
+
+.hidden{display:none !important}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:30px;line-height:1.6}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+@media (max-width:420px){
+  .chip{font-size:13px;padding:10px 6px}
+  .tile .n{font-size:17px}
+}
+</style>
+<script>
+try{var _s=JSON.parse(localStorage.getItem('engg_settings')||'{}');
+  document.documentElement.setAttribute('data-theme', _s.theme||'dark');}
+catch(e){document.documentElement.setAttribute('data-theme','dark');}
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- START -->
+  <section id="start">
+    <h1>eNgg<span class="dot">.</span></h1>
+    <p class="tag">Тренажёр по твоим словам — <b id="totalCount">0</b> штук из конспекта</p>
+
+    <div class="sectlabel">Тема оформления</div>
+    <div class="row themes" id="themes"></div>
+
+    <div class="sectlabel">Сложность</div>
+    <div class="tiles" id="levels">
+      <button class="tile" data-level="easy"   style="--sel:var(--easy)"   aria-pressed="false">
+        <div class="n">Лёгкие</div><div class="c"><span data-cnt="easy">0</span> слов</div></button>
+      <button class="tile" data-level="medium" style="--sel:var(--medium)" aria-pressed="true">
+        <div class="n">Средние</div><div class="c"><span data-cnt="medium">0</span> слов</div></button>
+      <button class="tile" data-level="hard"   style="--sel:var(--hard)"   aria-pressed="false">
+        <div class="n">Сложные</div><div class="c"><span data-cnt="hard">0</span> слов</div></button>
+      <button class="tile allt" data-level="all" aria-pressed="false">
+        <div class="n">Всё подряд</div><div class="c"><span data-cnt="all">0</span> слов вперемешку</div></button>
+    </div>
+
+    <div class="sectlabel">Режим</div>
+    <div class="row" id="modes">
+      <button class="chip" data-mode="choice"  aria-pressed="true">Выбор<span class="sub">варианты</span></button>
+      <button class="chip" data-mode="type"    aria-pressed="false">Впиши слово<span class="sub">по переводу</span></button>
+      <button class="chip" data-mode="context" aria-pressed="false">Контекст<span class="sub">в предложении</span></button>
+    </div>
+
+    <div class="sectlabel">Таймер на вопрос</div>
+    <div class="row" id="speeds">
+      <button class="chip" data-speed="0"  aria-pressed="false">Спокойно<span class="sub">без лимита</span></button>
+      <button class="chip" data-speed="15" aria-pressed="true">Норма<span class="sub">15 сек</span></button>
+      <button class="chip" data-speed="7"  aria-pressed="false">Блиц<span class="sub">7 сек</span></button>
+    </div>
+
+    <div id="dirWrap">
+    <div class="sectlabel">Направление <span style="font-weight:400;color:var(--muted)">(для режима «Выбор»)</span></div>
+    <div class="row" id="dirs">
+      <button class="chip" data-dir="en"  aria-pressed="true">EN → RU</button>
+      <button class="chip" data-dir="ru"  aria-pressed="false">RU → EN</button>
+      <button class="chip" data-dir="mix" aria-pressed="false">Вперемешку</button>
+    </div>
+    </div>
+
+    <div class="sectlabel">Сколько вопросов</div>
+    <div class="row" id="counts">
+      <button class="chip" data-count="10" aria-pressed="true">10</button>
+      <button class="chip" data-count="20" aria-pressed="false">20</button>
+      <button class="chip" data-count="all" aria-pressed="false">Все</button>
+    </div>
+
+    <button class="start-btn" id="startBtn">Начать тест →</button>
+    <button class="ref-toggle" id="toRef">📖 Справочник: грамматика и заметки</button>
+    <p class="foot">Лучший результат по каждому режиму сохраняется в этом браузере.<br>Клавиши 1–4 — выбор ответа.</p>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="hidden">
+    <div class="topbar">
+      <div class="prog">
+        <div class="count">Вопрос <b id="qNum">1</b> / <span id="qTot">10</span></div>
+        <div class="bar"><i id="barFill"></i></div>
+      </div>
+      <div class="timer" id="timer">
+        <svg width="62" height="62" viewBox="0 0 62 62">
+          <circle cx="31" cy="31" r="27" fill="none" stroke="var(--line)" stroke-width="5"/>
+          <circle id="tRing" cx="31" cy="31" r="27" fill="none" stroke="var(--accent)" stroke-width="5"
+                  stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="0"/>
+        </svg>
+        <div class="tnum" id="tNum">15</div>
+      </div>
+    </div>
+
+    <div class="qcard">
+      <div class="qdir" id="qDir">Переведи на русский</div>
+      <div class="qword" id="qWord">—</div>
+      <div class="qhint hidden" id="qHint"></div>
+    </div>
+    <div class="opts" id="opts"></div>
+    <div class="typebox hidden" id="typebox">
+      <input id="typeInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="введи английское слово и нажми Enter">
+      <button id="checkBtn" type="button">Проверить</button>
+      <div class="typefeed" id="typeFeed"></div>
+    </div>
+    <button class="skip" id="skipBtn">Не знаю, пропустить →</button>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="hidden">
+    <div class="res-hero">
+      <div class="res-score"><span id="rScore">0</span><span class="tot">/<span id="rTot">0</span></span></div>
+      <div class="res-msg" id="rMsg">—</div>
+    </div>
+    <div class="res-stats">
+      <div class="stat"><div class="v" id="rAcc">0%</div><div class="l">точность</div></div>
+      <div class="stat"><div class="v" id="rTime">0:00</div><div class="l">время</div></div>
+      <div class="stat"><div class="v best" id="rBest">—</div><div class="l">рекорд режима</div></div>
+    </div>
+    <div class="sectlabel" id="revLabel">Разбор ошибок</div>
+    <div class="review card" id="review" style="padding:4px 16px"></div>
+    <div class="res-actions">
+      <button class="again" id="againBtn">Ещё раз</button>
+      <button id="homeBtn">В меню</button>
+    </div>
+    <p class="foot" id="wrongReview"></p>
+  </section>
+
+  <!-- REFERENCE -->
+  <section id="reference" class="hidden">
+    <button class="back" id="refBack">← назад</button>
+    <h1 style="font-size:30px">Справочник</h1>
+    <p class="tag">Грамматика и многозначные слова из конспекта</p>
+    <div class="card" id="refList" style="padding:4px 18px"></div>
+  </section>
+
+</div>
+
+<script>
+const DATA = {"words": [{"en": "bad apple", "ru": "негодяй", "lvl": "medium"}, {"en": "apple of discord", "ru": "яблоко раздора", "lvl": "medium"}, {"en": "the apple of one's eye", "ru": "зеница ока", "lvl": "medium"}, {"en": "well done", "ru": "молодцы", "lvl": "easy"}, {"en": "fall", "ru": "осень", "lvl": "easy"}, {"en": "cuddle puddle", "ru": "куча обнимающихся людей", "lvl": "medium"}, {"en": "fake it until you make it", "ru": "английская идиома, которая буквально переводится как «Притворяйся, пока не получится»", "lvl": "medium"}, {"en": "interlocutor", "ru": "собеседник", "lvl": "hard"}, {"en": "shelve", "ru": "полка", "lvl": "medium"}, {"en": "sentence", "ru": "предложение", "lvl": "easy"}, {"en": "spite", "ru": "злоба", "lvl": "easy"}, {"en": "pathetic", "ru": "жалкий", "lvl": "hard"}, {"en": "satisfactorily", "ru": "удовлетворительно", "lvl": "hard"}, {"en": "mockery", "ru": "насмешка", "lvl": "hard"}, {"en": "brazen", "ru": "дерзкий", "lvl": "hard"}, {"en": "embarrassed", "ru": "смущен", "lvl": "medium"}, {"en": "gap", "ru": "разрыв", "lvl": "easy"}, {"en": "prodigy", "ru": "вундеркинд", "lvl": "hard"}, {"en": "rather", "ru": "скорее/довольно", "lvl": "medium"}, {"en": "hurry", "ru": "спешить/торопиться", "lvl": "easy"}, {"en": "miss mischievous", "ru": "озорница", "lvl": "medium"}, {"en": "flat", "ru": "плоский", "lvl": "easy"}, {"en": "deduce", "ru": "делать вывод", "lvl": "hard"}, {"en": "scabbard", "ru": "ножны", "lvl": "hard"}, {"en": "serpent", "ru": "мифологический змей", "lvl": "hard"}, {"en": "snake", "ru": "обычный змей", "lvl": "easy"}, {"en": "move down", "ru": "опустись", "lvl": "medium"}, {"en": "nowhere", "ru": "нигде", "lvl": "medium"}, {"en": "mean", "ru": "значить/иметь в виду", "lvl": "easy"}, {"en": "it turned out, that", "ru": "оказалось, что", "lvl": "medium"}, {"en": "fluid", "ru": "жидкость, текучая среда", "lvl": "easy"}, {"en": "watery being across  the isle", "ru": "водянистое существо через остров", "lvl": "medium"}, {"en": "insurance", "ru": "страхование", "lvl": "easy"}, {"en": "despite", "ru": "несмотря, вопреки", "lvl": "hard"}, {"en": "equation", "ru": "уравнение", "lvl": "hard"}, {"en": "evasion", "ru": "уклонение/избегание", "lvl": "hard"}, {"en": "steam", "ru": "пар", "lvl": "easy"}, {"en": "steamed rice", "ru": "рис на пару", "lvl": "medium"}, {"en": "fetch", "ru": "принести", "lvl": "easy"}, {"en": "adult", "ru": "взрослый", "lvl": "easy"}, {"en": "wig", "ru": "парик", "lvl": "easy"}, {"en": "downpour", "ru": "ливень", "lvl": "hard"}, {"en": "spirituality", "ru": "духовность", "lvl": "hard"}, {"en": "borrower", "ru": "заемщик", "lvl": "hard"}, {"en": "please everyone", "ru": "угодить всем", "lvl": "medium"}, {"en": "sob story", "ru": "печальная история", "lvl": "medium"}, {"en": "designed", "ru": "спроектирована", "lvl": "medium"}, {"en": "hilarious", "ru": "высшая точка смеха", "lvl": "hard"}, {"en": "expensive necklace and cheap earrings", "ru": "дорогое ожерелье и дешевые сережки", "lvl": "medium"}, {"en": "via", "ru": "с помощью", "lvl": "easy"}, {"en": "viable", "ru": "жизнеспособный", "lvl": "hard"}, {"en": "abstaine", "ru": "воздержаться", "lvl": "hard"}, {"en": "wide and narrow", "ru": "широко и узко", "lvl": "medium"}, {"en": "suppose", "ru": "предполагать", "lvl": "easy"}, {"en": "I am glad to see you", "ru": "я рад вас видеть", "lvl": "medium"}, {"en": "knowledge", "ru": "знание", "lvl": "easy"}, {"en": "barely", "ru": "едва", "lvl": "easy"}, {"en": "awkward", "ru": "неловкое физическое ощущение", "lvl": "medium"}, {"en": "typically", "ru": "типично", "lvl": "medium"}, {"en": "Property Order", "ru": "порядок свойств", "lvl": "medium"}, {"en": "rubbers", "ru": "резинки", "lvl": "medium"}, {"en": "still", "ru": "все еще", "lvl": "easy"}, {"en": "chatty", "ru": "болтушка", "lvl": "medium"}, {"en": "arousal", "ru": "возбуждение", "lvl": "hard"}, {"en": "adulterants", "ru": "примеси или разбавители в наркотиках", "lvl": "hard"}, {"en": "bark", "ru": "кора", "lvl": "easy"}, {"en": "awareness", "ru": "осведомлённость", "lvl": "medium"}, {"en": "recluse", "ru": "отшельник, затворник", "lvl": "hard"}, {"en": "dunno", "ru": "разговорное I don't know", "lvl": "easy"}, {"en": "flavor", "ru": "вкус", "lvl": "easy"}, {"en": "indolent", "ru": "вялотекущий", "lvl": "hard"}, {"en": "moldy bread", "ru": "заплесневелый хлеб", "lvl": "hard"}, {"en": "Depiction", "ru": "изображение, описание, представление чего-либо", "lvl": "hard"}, {"en": "spark", "ru": "искра", "lvl": "easy"}, {"en": "mist", "ru": "легкий туман", "lvl": "easy"}, {"en": "haze", "ru": "легкая замутненность воздуха", "lvl": "easy"}, {"en": "too much", "ru": "чересчур/перебор", "lvl": "medium"}, {"en": "mistress", "ru": "любовница", "lvl": "medium"}, {"en": "crib", "ru": "детская кроватка", "lvl": "easy"}, {"en": "waist", "ru": "талия", "lvl": "easy"}, {"en": "take a sip of coffee", "ru": "сделай глоток кофе", "lvl": "medium"}, {"en": "bypass the system", "ru": "обойти систему", "lvl": "medium"}, {"en": "cleft", "ru": "щель", "lvl": "easy"}, {"en": "vulnerability", "ru": "уязвимость, ранимость", "lvl": "hard"}, {"en": "eerie", "ru": "зловещий с мистическим и сверхъестественным оттенком", "lvl": "hard"}, {"en": "scary", "ru": "страшное", "lvl": "easy"}, {"en": "creepy", "ru": "отвратительно-пугающее", "lvl": "medium"}, {"en": "spooky", "ru": "игриво страшное", "lvl": "medium"}, {"en": "may", "ru": "вполне возможно", "lvl": "easy"}, {"en": "might", "ru": "крайне сомнительно", "lvl": "easy"}, {"en": "divorce", "ru": "развод", "lvl": "easy"}, {"en": "include", "ru": "включать в состав или куда то еще", "lvl": "medium"}, {"en": "control unit", "ru": "контрольный блок", "lvl": "medium"}, {"en": "salary", "ru": "зарплата", "lvl": "easy"}, {"en": "interrupt", "ru": "прерывать, перебивать", "lvl": "medium"}, {"en": "lucid", "ru": "ясный", "lvl": "easy"}, {"en": "lucid dream", "ru": "осознанное сновидение", "lvl": "medium"}, {"en": "stunt", "ru": "опасный трюк", "lvl": "easy"}, {"en": "entrepreneur", "ru": "предприниматель", "lvl": "hard"}, {"en": "pledge", "ru": "клятва", "lvl": "hard"}, {"en": "until", "ru": "пока", "lvl": "easy"}, {"en": "while", "ru": "пока", "lvl": "easy"}, {"en": "their supply depended entirely", "ru": "их снабжение полностью зависело", "lvl": "medium"}, {"en": "yield", "ru": "выход", "lvl": "hard"}, {"en": "tailored treatment", "ru": "индивидуальное лечение, адаптированный подход", "lvl": "hard"}, {"en": "Ethical concerns", "ru": "этические вопросы", "lvl": "hard"}, {"en": "benefit", "ru": "выгода", "lvl": "easy"}, {"en": "i don't give a fuck", "ru": "мне похуй", "lvl": "medium"}, {"en": "foam", "ru": "пена", "lvl": "easy"}, {"en": "lead", "ru": "свинец", "lvl": "easy"}, {"en": "surgeon", "ru": "хирург", "lvl": "easy"}, {"en": "Neither", "ru": "ни то, ни другое", "lvl": "medium"}, {"en": "garbage", "ru": "мусор", "lvl": "easy"}, {"en": "Antipyretic", "ru": "жаропонижающие", "lvl": "hard"}, {"en": "approx. 500 dollars", "ru": "примерно 500 долларов", "lvl": "medium"}, {"en": "Classmate", "ru": "одноклассник", "lvl": "medium"}, {"en": "go through", "ru": "переживать/проживать", "lvl": "medium"}, {"en": "dimension", "ru": "измерение, размах, масштаб", "lvl": "hard"}, {"en": "gulf", "ru": "залив", "lvl": "easy"}, {"en": "frequency", "ru": "частота", "lvl": "hard"}, {"en": "smuggle", "ru": "переправлять контрабандой", "lvl": "hard"}, {"en": "rumor", "ru": "слухи", "lvl": "easy"}, {"en": "are you sure?", "ru": "ты уверен?", "lvl": "medium"}, {"en": "enough", "ru": "достаточно", "lvl": "easy"}, {"en": "hold on", "ru": "подожди", "lvl": "medium"}, {"en": "wisdom", "ru": "мудрость", "lvl": "easy"}, {"en": "both", "ru": "оба", "lvl": "easy"}, {"en": "influential", "ru": "влиятельный", "lvl": "hard"}, {"en": "obsession", "ru": "одержимость", "lvl": "hard"}, {"en": "board of directors", "ru": "совет директоров", "lvl": "hard"}, {"en": "groundbreaking", "ru": "новаторский, революционный", "lvl": "hard"}, {"en": "gain", "ru": "прибыль, выигрыш", "lvl": "easy"}, {"en": "acquaintance", "ru": "знакомство", "lvl": "hard"}, {"en": "awesome", "ru": "круто/классно/здорово", "lvl": "easy"}, {"en": "revenue", "ru": "выручка", "lvl": "hard"}, {"en": "bouncer", "ru": "вышибала", "lvl": "hard"}, {"en": "define", "ru": "определить", "lvl": "easy"}, {"en": "definitely", "ru": "определенно", "lvl": "hard"}, {"en": "add some seasoning", "ru": "добавь немного приправы", "lvl": "medium"}, {"en": "ridiculous", "ru": "абсурдные, нелепые, смехотворные", "lvl": "hard"}, {"en": "digital", "ru": "цифровое", "lvl": "medium"}, {"en": "smooth and distinct", "ru": "гладкий и отчетливый", "lvl": "medium"}, {"en": "unwitting", "ru": "непреднамеренный, неосознанный", "lvl": "hard"}, {"en": "unwitting accomplise", "ru": "невольный соучастник", "lvl": "medium"}, {"en": "probably", "ru": "возможно", "lvl": "medium"}, {"en": "perhap", "ru": "возможно", "lvl": "medium"}, {"en": "deny", "ru": "отрицать", "lvl": "easy"}, {"en": "denied", "ru": "отклонено", "lvl": "easy"}, {"en": "keep going", "ru": "продолжай/не останавливайся", "lvl": "medium"}, {"en": "changeable", "ru": "переменчивый", "lvl": "medium"}, {"en": "over and over", "ru": "снова и снова", "lvl": "medium"}, {"en": "kind", "ru": "добрый", "lvl": "easy"}, {"en": "kinda", "ru": "вроде, немного", "lvl": "easy"}, {"en": "Curse", "ru": "проклятье", "lvl": "easy"}, {"en": "cursed", "ru": "проклятый", "lvl": "easy"}, {"en": "fate", "ru": "судьба", "lvl": "easy"}, {"en": "revenge", "ru": "месть", "lvl": "easy"}, {"en": "almost", "ru": "почти", "lvl": "easy"}, {"en": "occurrence", "ru": "случай, явление", "lvl": "hard"}, {"en": "brittle", "ru": "хрупкий", "lvl": "hard"}, {"en": "i am starving", "ru": "я умираю с голоду", "lvl": "medium"}, {"en": "preacher", "ru": "проповедник", "lvl": "hard"}, {"en": "malingering", "ru": "притворство, симуляция", "lvl": "hard"}, {"en": "prone to errors", "ru": "склонный к ошибкам", "lvl": "hard"}, {"en": "capacity", "ru": "объем, вместимость", "lvl": "hard"}, {"en": "wander", "ru": "бродить, скитаться", "lvl": "easy"}, {"en": "discombobulated", "ru": "растерянный", "lvl": "hard"}, {"en": "unaccommodating", "ru": "несговорчивый, неуступчивый", "lvl": "hard"}, {"en": "considerable", "ru": "значительный, существенный", "lvl": "hard"}, {"en": "bosom", "ru": "женская грудь", "lvl": "hard"}, {"en": "moose", "ru": "лось", "lvl": "easy"}, {"en": "Affair", "ru": "дело, вопрос", "lvl": "hard"}, {"en": "Yarn", "ru": "пряжа, нитки для вязания", "lvl": "hard"}, {"en": "Bargain", "ru": "выгодная покупка, дешевка", "lvl": "hard"}, {"en": "into the bargain", "ru": "вдобавок", "lvl": "medium"}, {"en": "particular", "ru": "конкретный, особая деталь", "lvl": "hard"}, {"en": "addition", "ru": "дополнение, добавление", "lvl": "easy"}, {"en": "uncommonly shy", "ru": "необычайно стеснительный", "lvl": "medium"}, {"en": "excuse", "ru": "оправдание, отговорка", "lvl": "easy"}, {"en": "vagaries", "ru": "капризы, причуды", "lvl": "hard"}, {"en": "nephew", "ru": "племянник", "lvl": "easy"}, {"en": "native", "ru": "родной, коренной, врожденный", "lvl": "easy"}, {"en": "moreover, he was deeply susceptible", "ru": "более того, он был глубоко восприимчивым", "lvl": "medium"}, {"en": "upon", "ru": "то же, что и on, но более книжно и официально", "lvl": "easy"}, {"en": "sulky", "ru": "надутый", "lvl": "hard"}, {"en": "stir", "ru": "мешать", "lvl": "easy"}, {"en": "cradle", "ru": "колыбель", "lvl": "easy"}, {"en": "duffel bag", "ru": "баул, спортивная сумка", "lvl": "medium"}, {"en": "eliminate", "ru": "устранить, избавиться, исключить", "lvl": "hard"}, {"en": "weaknesses", "ru": "слабое место, уязвимость", "lvl": "hard"}, {"en": "tangible", "ru": "осязаемое", "lvl": "hard"}, {"en": "purchased", "ru": "купленный", "lvl": "medium"}, {"en": "negotiation site", "ru": "место переговоров", "lvl": "medium"}, {"en": "as all of us know", "ru": "как все мы знаем", "lvl": "medium"}, {"en": "equipment for subsequent life", "ru": "снаряжение для дальнейшей жизни", "lvl": "medium"}], "grammar": ["Simple - факт или регулярное действие/фото\nPresent simple - She works every day\nPast simple - She worked every day\nFuture simple - She will work every day", "Continuous - процесс/трансляция\nPresent Continuous - She are working right now\nPast Continuous - She were working right now\nFuture Continuous - She will be working right now", "Perfect - действие завершилось, но его результат или значение важны в момент речи\nPresent perfect - I have lost my keys  /Соединяет прошлое с настоящим/(потерял ключи, в результате не могу открыть дверь)\nPast perfect - She had a job before spring came  /Соединяет прошлое с прошлым/(У нее была работы до весны\nFuture perfect - She will finish working by 6 p.m /действие, которое будет завершено к определённому моменту в будущем/", "Perfect Continuous - объединяет в себе Perfect (важен результат) и Continuous (важна длительность процесса) сколько времени продолжалось действие до определённого момента? \nPresent Perfect Continuous - She has been working here since dinner (Действие началось в прошлом, продолжается до сих пор)\nPast Perfect Continuous - She worked five hours until midnight (Действие продолжалось в течение какого-то времени до определённого момента в прошлом)\nFuture Perfect Continuous - By midnight, it will be working for five hours (Действие будет продолжаться до наступление какого то времени)", "глагол turn:\n1. вращение\nturn around - обернуться\nturn over - перевернуть\nturn back/left/right - повернуть в\n2. изменение состояния\nturn red - покраснеть\nturn warm - потеплеть\n3. включение и выключение\nturn on - включить\nturn off - выключить\nturn up - сделать погромче\nturn down - сделать потише\n4. превращение и трансформация в переносном смысле\nturn into a frog - превратиться в лягушку", "0 условное: Всегда истина и факты\nif you kill a bird, it dies\n1 условное: Вероятные условия в будущем\nif a bird dies, I will be sad\n2 условное: Выдуманные ситуации в настоящем или будущем\nIf I were to get sad, tears would start to flow\n3 условное: Нереальное условие в прошлом(чаще всего сожаление)\nif I had not killed a bird, I would have felt so happy", "ful на конце - полный чего то\nhelp - помощь \nhelpful - полезный", "Часто используемые неправильные существительные:\nwoman — women\nman — men\nchild — children\ntooth — teeth\nfoot — feet\nperson — people\nleaf — leaves\nmouse — mice\ngoose — geese\nhalf — halves\nknife — knives\nwife — wives\nlife — lives", "rather(наречие) - скорее/довольно\nhurry(глагол) - спешить/торопиться", "mean - значить/иметь в виду(глагол)\nmean - злой/скупой(прилагательное)\nmean - среднее значение", "via - с помощью\nviable - жизнеспособный", "eerie - зловещий с мистическим и сверхъестественным оттенком\nscary - страшное\ncreepy - отвратительно-пугающее\nspooky - игриво страшное", "may - вполне возможно\nmight - крайне сомнительно", "until - пока(до какого то момента)\nwhile - пока(в течении какого то времени)", "guilty - adjective\nfault - noun", "influential — влиятельный\nobsession — одержимость\nboard of directors — совет директоров\ngroundbreaking — новаторский, революционный", "probably - возможно(вероятность 70-80)\nperhap - возможно(вероятность 50/50)", "kind - добрый\nkind - вид, тип, разновидность\nkinda(сокр от kind of) - вроде, немного", "Bargain - выгодная покупка, дешевка\ninto the bargain - вдобавок"]};
+const WORDS = DATA.words, GRAMMAR = DATA.grammar;
+const $ = s => document.querySelector(s);
+
+// ---- context (cloze) sentence bank ----
+const CLOZE = [
+ {s:"The leaves turn red and gold in the ___.",answer:"fall",lvl:"easy",hint:"осень"},
+ {s:"You must be an ___ to sign this form.",answer:"adult",lvl:"easy",hint:"взрослый"},
+ {s:"We don't have ___ time to finish today.",answer:"enough",lvl:"easy",hint:"достаточно"},
+ {s:"It's ___ midnight, we should go.",answer:"almost",lvl:"easy",hint:"почти"},
+ {s:"She gets her ___ at the end of each month.",answer:"salary",lvl:"easy",hint:"зарплата"},
+ {s:"Please take the ___ out before it smells.",answer:"garbage",lvl:"easy",hint:"мусор"},
+ {s:"The ___ performed a long and difficult operation.",answer:"surgeon",lvl:"easy",hint:"хирург"},
+ {s:"We love to ___ around the old town with no plan.",answer:"wander",lvl:"easy",hint:"бродить"},
+ {s:"I trained my dog to ___ the ball.",answer:"fetch",lvl:"easy",hint:"приносить"},
+ {s:"English is not his ___ language.",answer:"native",lvl:"easy",hint:"родной"},
+ {s:"There's a ___ going around that the shop will close.",answer:"rumor",lvl:"easy",hint:"слух"},
+ {s:"This cake has a rich chocolate ___.",answer:"flavor",lvl:"easy",hint:"вкус"},
+ {s:"I could ___ hear you over the noise.",answer:"barely",lvl:"easy",hint:"едва"},
+ {s:"A single ___ can start a huge fire.",answer:"spark",lvl:"easy",hint:"искра"},
+ {s:"Car ___ is required by law in most countries.",answer:"insurance",lvl:"easy",hint:"страховка"},
+ {s:"Her ___ of history really surprised the teacher.",answer:"knowledge",lvl:"easy",hint:"знание"},
+ {s:"I ___ you're right, let's try it your way.",answer:"suppose",lvl:"easy",hint:"полагать"},
+ {s:"Are you ___ working, or can we talk?",answer:"still",lvl:"easy",hint:"всё ещё"},
+ {s:"After years of fighting, they decided to ___.",answer:"divorce",lvl:"easy",hint:"развестись"},
+ {s:"There is a wide ___ between rich and poor here.",answer:"gap",lvl:"easy",hint:"разрыв"},
+ {s:"With age usually comes ___.",answer:"wisdom",lvl:"easy",hint:"мудрость"},
+ {s:"A ___ slid silently across the path.",answer:"snake",lvl:"easy",hint:"змея"},
+
+ {s:"Sorry to ___, but the meeting is about to start.",answer:"interrupt",lvl:"medium",hint:"перебивать"},
+ {s:"There was an ___ silence after his comment.",answer:"awkward",lvl:"medium",hint:"неловкий"},
+ {s:"Does the ticket price ___ a free drink?",answer:"include",lvl:"medium",hint:"включать"},
+ {s:"He ___ gets to the office around nine.",answer:"typically",lvl:"medium",hint:"обычно"},
+ {s:"The library moved all its records to a ___ format.",answer:"digital",lvl:"medium",hint:"цифровой"},
+ {s:"He kept trying to ___ that he was ever there.",answer:"deny",lvl:"medium",hint:"отрицать"},
+ {s:"My neighbour is so ___ she can talk for hours.",answer:"chatty",lvl:"medium",hint:"болтливая"},
+ {s:"I skipped breakfast and now I'm ___.",answer:"starving",lvl:"medium",hint:"умираю с голоду"},
+ {s:"The campaign raised ___ about ocean pollution.",answer:"awareness",lvl:"medium",hint:"осведомлённость"},
+ {s:"They found a clever way to ___ the security system.",answer:"bypass",lvl:"medium",hint:"обойти"},
+ {s:"I'm ___ a really tough period at the moment.",answer:"going through",lvl:"medium",hint:"переживаю"},
+ {s:"The chair was ___ for maximum comfort.",answer:"designed",lvl:"medium",hint:"спроектирован"},
+ {s:"He took a slow ___ of his hot coffee.",answer:"sip",lvl:"medium",hint:"глоток"},
+ {s:"The weather here is very ___ — sun, then rain.",answer:"changeable",lvl:"medium",hint:"переменчивая"},
+
+ {s:"Old paper turns yellow and ___ with time.",answer:"brittle",lvl:"hard",hint:"хрупкий"},
+ {s:"After becoming famous he turned into a ___ and saw no one.",answer:"recluse",lvl:"hard",hint:"отшельник"},
+ {s:"At age six, the ___ was already composing music.",answer:"prodigy",lvl:"hard",hint:"вундеркинд"},
+ {s:"It was a ___ lie, told without the slightest shame.",answer:"brazen",lvl:"hard",hint:"наглый"},
+ {s:"He was an ___ accomplice who had no idea of the plan.",answer:"unwitting",lvl:"hard",hint:"невольный"},
+ {s:"They invested a ___ amount of money in the idea.",answer:"considerable",lvl:"hard",hint:"значительный"},
+ {s:"Investors want ___ results, not vague promises.",answer:"tangible",lvl:"hard",hint:"осязаемый"},
+ {s:"The audit found a serious ___ in the system.",answer:"vulnerability",lvl:"hard",hint:"уязвимость"},
+ {s:"This patch should ___ the error for good.",answer:"eliminate",lvl:"hard",hint:"устранить"},
+ {s:"Snowfall in May is a very rare ___ here.",answer:"occurrence",lvl:"hard",hint:"явление"},
+ {s:"The company's annual ___ rose by twenty percent.",answer:"revenue",lvl:"hard",hint:"выручка"},
+ {s:"The arena has a ___ of forty thousand seats.",answer:"capacity",lvl:"hard",hint:"вместимость"},
+ {s:"They were caught trying to ___ goods across the border.",answer:"smuggle",lvl:"hard",hint:"провозить контрабандой"},
+ {s:"Every volunteer made a ___ to help the shelter.",answer:"pledge",lvl:"hard",hint:"клятва"},
+ {s:"Paying fifty dollars for a sandwich is just ___.",answer:"ridiculous",lvl:"hard",hint:"нелепо"},
+ {s:"We got soaked in a sudden ___ on the way home.",answer:"downpour",lvl:"hard",hint:"ливень"},
+ {s:"His joke was so ___ that everyone cried laughing.",answer:"hilarious",lvl:"hard",hint:"уморительный"},
+ {s:"From the footprints she could ___ who had been there.",answer:"deduce",lvl:"hard",hint:"сделать вывод"},
+ {s:"His weak, ___ excuse convinced nobody.",answer:"pathetic",lvl:"hard",hint:"жалкий"},
+ {s:"This variety of wheat gives a very high ___.",answer:"yield",lvl:"hard",hint:"урожай, выход"},
+ {s:"Please increase the ___ of your data backups.",answer:"frequency",lvl:"hard",hint:"частота"},
+ {s:"The decision has an ethical ___ as well as a financial one.",answer:"dimension",lvl:"hard",hint:"измерение, аспект"},
+ {s:"The doctor suspected he was ___ to skip work.",answer:"malingering",lvl:"hard",hint:"симулирующий"},
+ {s:"Young children are especially ___ to the flu.",answer:"susceptible",lvl:"hard",hint:"восприимчивый"},
+ {s:"She finally made the ___ of a famous professor.",answer:"acquaintance",lvl:"hard",hint:"знакомство"},
+ {s:"A good ___ listens as much as they speak.",answer:"interlocutor",lvl:"hard",hint:"собеседник"},
+ {s:"The old house had an ___, ghostly atmosphere.",answer:"eerie",lvl:"hard",hint:"зловещий"},
+];
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];} return a; };
+const CIRC = 2*Math.PI*27;
+
+// ---- settings ----
+const S = { level:'medium', speed:15, dir:'en', count:10, theme:'dark', mode:'choice' };
+try{ const saved=JSON.parse(localStorage.getItem('engg_settings')||'{}'); Object.assign(S,saved); }catch(e){}
+
+// ---- themes ----
+const THEMES=[
+  {id:'dark',name:'Тёмная',dot:'#c6f24e'},
+  {id:'digital',name:'Цифровая',dot:'#00e5ff'},
+  {id:'matrix',name:'Матрица',dot:'#39ff5e'},
+  {id:'neon',name:'Неон',dot:'#ff3df0'},
+  {id:'ocean',name:'Океан',dot:'#2dd4ff'},
+  {id:'light',name:'Светлая',dot:'#4b7bec'},
+  {id:'paper',name:'Бумага',dot:'#b45309'},
+];
+function applyTheme(id){
+  document.documentElement.setAttribute('data-theme',id); S.theme=id;
+  document.querySelectorAll('#themes .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.theme===id));
+  saveSettings();
+}
+function buildThemes(){
+  const box=document.getElementById('themes'); box.innerHTML='';
+  THEMES.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='chip'; b.type='button'; b.dataset.theme=t.id;
+    b.style.setProperty('--swc',t.dot);
+    b.innerHTML='<span class="sw"></span>'+t.name;
+    b.onclick=()=>applyTheme(t.id);
+    box.appendChild(b);
+  });
+}
+
+function paintSettings(){
+  document.querySelectorAll('#levels .tile').forEach(b=>b.setAttribute('aria-pressed', b.dataset.level===S.level));
+  document.querySelectorAll('#speeds .chip').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.speed===S.speed));
+  document.querySelectorAll('#dirs .chip').forEach(b=>b.setAttribute('aria-pressed', b.dataset.dir===S.dir));
+  document.querySelectorAll('#counts .chip').forEach(b=>b.setAttribute('aria-pressed', b.dataset.count===String(S.count)));
+  document.querySelectorAll('#modes .chip').forEach(b=>b.setAttribute('aria-pressed', b.dataset.mode===S.mode));
+  updateModeUI();
+}
+function updateModeUI(){
+  const dw=document.getElementById('dirWrap');
+  if(dw) dw.style.display = (S.mode==='choice') ? '' : 'none';
+}
+function saveSettings(){ try{localStorage.setItem('engg_settings',JSON.stringify(S));}catch(e){} }
+
+document.querySelectorAll('#levels .tile').forEach(b=>b.onclick=()=>{S.level=b.dataset.level;paintSettings();saveSettings();});
+document.querySelectorAll('#speeds .chip').forEach(b=>b.onclick=()=>{S.speed=+b.dataset.speed;paintSettings();saveSettings();});
+document.querySelectorAll('#dirs .chip').forEach(b=>b.onclick=()=>{S.dir=b.dataset.dir;paintSettings();saveSettings();});
+document.querySelectorAll('#counts .chip').forEach(b=>b.onclick=()=>{S.count=(b.dataset.count==='all'?'all':+b.dataset.count);paintSettings();saveSettings();});
+document.querySelectorAll('#modes .chip').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;paintSettings();saveSettings();});
+
+// counts on start screen
+const byLevel = {easy:[],medium:[],hard:[],all:WORDS.slice()};
+WORDS.forEach(w=>byLevel[w.lvl].push(w));
+$('#totalCount').textContent = WORDS.length;
+document.querySelectorAll('[data-cnt]').forEach(el=>el.textContent=byLevel[el.dataset.cnt].length);
+
+// ---- quiz state ----
+let Q=[], idx=0, score=0, wrongs=[], startT=0, tHandle=null, tLeft=0, locked=false;
+
+function pool(){ return byLevel[S.level]; }
+
+function buildQuiz(){
+  Q = (S.mode==='context') ? buildContext() : buildWordQuiz();
+  idx=0; score=0; wrongs=[]; startT=Date.now();
+}
+function buildWordQuiz(){
+  const src = shuffle(pool().slice());
+  const n = S.count==='all' ? src.length : Math.min(S.count, src.length);
+  return src.slice(0,n).map(w=>{
+    if(S.mode==='type') return {kind:'type', prompt:w.ru, answer:w.en};
+    const dir = S.dir==='mix' ? (Math.random()<0.5?'en':'ru') : S.dir;
+    const prompt = dir==='en' ? w.en : w.ru;
+    const answer = dir==='en' ? w.ru : w.en;
+    let cand = pool().filter(x=>(dir==='en'?x.ru:x.en)!==answer);
+    if(cand.length<3) cand = WORDS.filter(x=>(dir==='en'?x.ru:x.en)!==answer);
+    shuffle(cand);
+    const distract=[]; const used=new Set([answer]);
+    for(const x of cand){ const a=dir==='en'?x.ru:x.en; if(!used.has(a)){used.add(a);distract.push(a);} if(distract.length===3)break; }
+    return {kind:'choice', dir, prompt, answer, options:shuffle([answer,...distract])};
+  });
+}
+function buildContext(){
+  let src = CLOZE.filter(c=>S.level==='all'||c.lvl===S.level);
+  if(src.length<4) src = CLOZE.slice();
+  src = shuffle(src.slice());
+  const n = S.count==='all' ? src.length : Math.min(S.count, src.length);
+  return src.slice(0,n).map(c=>{
+    let cand = CLOZE.filter(x=>x.answer!==c.answer && (S.level==='all'||x.lvl===c.lvl));
+    if(cand.length<3) cand = CLOZE.filter(x=>x.answer!==c.answer);
+    shuffle(cand);
+    const distract=[]; const used=new Set([c.answer]);
+    for(const x of cand){ if(!used.has(x.answer)){used.add(x.answer);distract.push(x.answer);} if(distract.length===3)break; }
+    return {kind:'context', prompt:c.s, sentence:c.s, hint:c.hint, answer:c.answer, options:shuffle([c.answer,...distract])};
+  });
+}
+
+function show(screen){
+  ['start','quiz','result','reference'].forEach(s=>$('#'+s).classList.toggle('hidden', s!==screen));
+  window.scrollTo(0,0);
+}
+
+function render(){
+  const q=Q[idx]; locked=false;
+  $('#qNum').textContent=idx+1; $('#qTot').textContent=Q.length;
+  $('#barFill').style.width=((idx)/Q.length*100)+'%';
+  const qWord=$('#qWord'), qHint=$('#qHint'), opts=$('#opts'), typebox=$('#typebox');
+  qWord.classList.remove('sentence'); qHint.classList.add('hidden'); qHint.textContent='';
+
+  if(q.kind==='type'){
+    $('#qDir').textContent='Впиши слово по-английски';
+    qWord.textContent=q.prompt;
+    opts.classList.add('hidden'); opts.innerHTML='';
+    typebox.classList.remove('hidden');
+    const inp=$('#typeInput'); inp.value=''; inp.disabled=false; inp.className='';
+    $('#checkBtn').disabled=false; const f=$('#typeFeed'); f.textContent=''; f.className='typefeed';
+    setTimeout(()=>inp.focus(),60);
+  } else if(q.kind==='context'){
+    $('#qDir').textContent='Выбери слово по смыслу';
+    qWord.classList.add('sentence');
+    qWord.innerHTML = escapeHtml(q.sentence).replace('___','<span class="blank">&nbsp;&nbsp;?&nbsp;&nbsp;</span>');
+    if(q.hint){ qHint.textContent='подсказка: '+q.hint; qHint.classList.remove('hidden'); }
+    typebox.classList.add('hidden');
+    opts.classList.remove('hidden'); renderOptions(q);
+  } else {
+    $('#qDir').textContent = q.dir==='en' ? 'Переведи на русский' : 'Переведи на английский';
+    qWord.textContent=q.prompt;
+    typebox.classList.add('hidden');
+    opts.classList.remove('hidden'); renderOptions(q);
+  }
+  startTimer();
+}
+function renderOptions(q){
+  const box=$('#opts'); box.innerHTML='';
+  q.options.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='opt'; b.type='button';
+    b.innerHTML='<span class="key">'+(i+1)+'</span><span class="txt"></span>';
+    b.querySelector('.txt').textContent=o;
+    b.onclick=()=>choose(b,o);
+    box.appendChild(b);
+  });
+}
+function normW(s){return s.toLowerCase().trim().replace(/[.,!?;:"'`’]/g,'').replace(/\s+/g,' ');}
+function stripArt(s){return s.replace(/^(the|a|an)\s+/,'');}
+function checkType(){
+  if(locked) return;
+  const q=Q[idx], inp=$('#typeInput');
+  if(!normW(inp.value)) return;
+  locked=true; clearInterval(tHandle);
+  const u=normW(inp.value), a=normW(q.answer);
+  const ok = (u===a) || (stripArt(u)===stripArt(a));
+  inp.disabled=true; $('#checkBtn').disabled=true;
+  const f=$('#typeFeed');
+  if(ok){ score++; inp.className='ok'; f.className='typefeed ok'; f.textContent='✓ Верно'; }
+  else{ inp.className='bad'; f.className='typefeed bad'; f.innerHTML='✕ Правильно: <b>'+escapeHtml(q.answer)+'</b>';
+        wrongs.push({prompt:q.prompt,answer:q.answer,picked:inp.value||'—'}); }
+  $('#barFill').style.width=((idx+1)/Q.length*100)+'%';
+  setTimeout(next, ok?750:1700);
+}
+
+function startTimer(){
+  clearInterval(tHandle);
+  const ring=$('#tRing'), num=$('#tNum'), T=$('#timer');
+  if(S.speed===0){ T.classList.add('infinite'); num.textContent='∞'; ring.style.strokeDashoffset=CIRC; return; }
+  T.classList.remove('infinite');
+  tLeft=S.speed*10; // tenths
+  const total=tLeft;
+  const upd=()=>{
+    const frac=tLeft/total;
+    ring.style.strokeDashoffset = CIRC*(1-frac);
+    const sec=Math.ceil(tLeft/10); num.textContent=sec;
+    ring.style.stroke = sec<=3 ? 'var(--bad)' : (sec<=6?'var(--warn)':'var(--accent)');
+    num.style.color = sec<=3 ? 'var(--bad)' : 'var(--ink)';
+  };
+  upd();
+  tHandle=setInterval(()=>{
+    tLeft--; upd();
+    if(tLeft<=0){ clearInterval(tHandle); timeUp(); }
+  },100);
+}
+
+function choose(btn,opt){
+  if(locked) return; locked=true; clearInterval(tHandle);
+  const q=Q[idx];
+  const correct = opt===q.answer;
+  if(correct){ score++; btn.classList.add('correct'); btn.querySelector('.txt').insertAdjacentHTML('afterend','<span class="mark">✓</span>'); }
+  else{
+    btn.classList.add('wrong'); btn.querySelector('.txt').insertAdjacentHTML('afterend','<span class="mark">✕</span>');
+    wrongs.push({prompt:q.prompt,answer:q.answer,picked:opt});
+    // highlight the right one
+    document.querySelectorAll('.opt').forEach(b=>{
+      if(b.querySelector('.txt').textContent===q.answer){ b.classList.add('correct'); b.querySelector('.txt').insertAdjacentHTML('afterend','<span class="mark">✓</span>'); }
+    });
+  }
+  document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  $('#barFill').style.width=((idx+1)/Q.length*100)+'%';
+  setTimeout(next, correct?650:1250);
+}
+
+function timeUp(){
+  if(locked) return; locked=true; clearInterval(tHandle);
+  const q=Q[idx];
+  wrongs.push({prompt:q.prompt,answer:q.answer,picked:'— не успел —'});
+  if(q.kind==='type'){
+    const inp=$('#typeInput'); inp.disabled=true; inp.className='bad'; $('#checkBtn').disabled=true;
+    const f=$('#typeFeed'); f.className='typefeed bad'; f.innerHTML='⏱ Правильно: <b>'+escapeHtml(q.answer)+'</b>';
+  } else {
+    document.querySelectorAll('.opt').forEach(b=>{
+      b.disabled=true;
+      if(b.querySelector('.txt').textContent===q.answer){ b.classList.add('correct'); b.querySelector('.txt').insertAdjacentHTML('afterend','<span class="mark">✓</span>'); }
+    });
+  }
+  $('#tNum').textContent='0'; $('#tNum').style.color='var(--bad)';
+  setTimeout(next,1400);
+}
+
+function next(){ idx++; if(idx>=Q.length) finish(); else render(); }
+
+function bestKey(){ return 'engg_best_'+S.mode+'_'+S.level+'_'+S.dir; }
+function finish(){
+  clearInterval(tHandle);
+  const total=Q.length, acc=Math.round(score/total*100);
+  const secs=Math.round((Date.now()-startT)/1000);
+  const mm=Math.floor(secs/60), ss=String(secs%60).padStart(2,'0');
+  $('#rScore').textContent=score; $('#rTot').textContent=total;
+  $('#rAcc').textContent=acc+'%'; $('#rTime').textContent=mm+':'+ss;
+  // best
+  let best=0; try{best=+(localStorage.getItem(bestKey())||0);}catch(e){}
+  if(acc>best){ best=acc; try{localStorage.setItem(bestKey(),acc);}catch(e){} $('#rBest').textContent='🔥 '+acc+'%'; }
+  else $('#rBest').textContent=best?best+'%':'—';
+  // message
+  const msg = acc===100?'Идеально. Все слова твои.':acc>=80?'Сильно. Почти всё помнишь.':acc>=50?'Нормально, но есть что подтянуть.':'Эти слова стоит повторить ещё раз.';
+  $('#rMsg').textContent=msg;
+  // review
+  const rev=$('#review'); rev.innerHTML='';
+  if(wrongs.length===0){
+    $('#revLabel').textContent='Ошибок нет';
+    rev.innerHTML='<div style="padding:16px 0;color:var(--muted);text-align:center">Ни одной ошибки 👏</div>';
+  }else{
+    $('#revLabel').textContent='Разбор ошибок ('+wrongs.length+')';
+    wrongs.forEach(w=>{
+      const d=document.createElement('div'); d.className='rev-item rev-bad';
+      d.innerHTML='<span class="rev-en"></span><span class="rev-ru">ты: <b></b><br>верно: '+escapeHtml(w.answer)+'</span>';
+      d.querySelector('.rev-en').textContent=w.prompt;
+      d.querySelector('b').textContent=w.picked;
+      rev.appendChild(d);
+    });
+  }
+  show('result');
+}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+// ---- buttons ----
+$('#startBtn').onclick=()=>{ buildQuiz(); show('quiz'); render(); };
+$('#againBtn').onclick=()=>{ buildQuiz(); show('quiz'); render(); };
+$('#homeBtn').onclick=()=>show('start');
+$('#skipBtn').onclick=()=>{ if(!locked) timeUp(); };
+$('#checkBtn').onclick=checkType;
+$('#typeInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); if(!locked && !$('#typeInput').disabled) checkType(); }
+});
+
+document.addEventListener('keydown',e=>{
+  if($('#quiz').classList.contains('hidden')||locked) return;
+  if(document.activeElement===$('#typeInput')) return;
+  if(['1','2','3','4'].includes(e.key)){
+    const b=document.querySelectorAll('.opt')[+e.key-1];
+    if(b) b.click();
+  }
+});
+
+// ---- reference ----
+function buildRef(){
+  const box=$('#refList'); box.innerHTML='';
+  GRAMMAR.forEach(g=>{
+    const div=document.createElement('div'); div.className='ref-block';
+    const pre=document.createElement('pre');
+    // color english fragments before a dash
+    const colored=escapeHtml(g).replace(/^([A-Za-z][^\n-—]*?)(\s[-—])/gm,'<span class="en">$1</span>$2');
+    pre.innerHTML=colored;
+    div.appendChild(pre); box.appendChild(div);
+  });
+}
+$('#toRef').onclick=()=>{ buildRef(); show('reference'); };
+$('#refBack').onclick=()=>show('start');
+
+buildThemes();
+applyTheme(S.theme);
+paintSettings();
+</script>
+</body>
+</html>
